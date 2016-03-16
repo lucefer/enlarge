@@ -1,0 +1,14 @@
+{
+  "name": "zoomer",
+  "version": "1.0.0",
+  "description": "页面元素放大镜",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "lucefer",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-core": "^6.7.2"
+  }
+}
