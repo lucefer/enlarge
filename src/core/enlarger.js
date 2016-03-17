@@ -1,30 +1,36 @@
-import * from './util/helper'
+import * as helper from '../util/helper'
+
 //elements related
 var mask=document.createElement('div'),
 	wrapper=document.createElement('div'),
 	targetEle,targetInsteadHolder,parentEle,
-	browserPrefix='webkitAppearance' in document.style ?'-webkit-':''
+	browserPrefix='webkitAppearance' in document.body.style ?'-webkit-':''
+	
 //state
 var shown=false,
 	locked=false,
 	oldStyle;
-var viewBox
+
+//visual doc box
+var viewBox={}
 
 var options={
 	bgColor:'#FFF',
-	transitionDuration:0.5s,
+	transitionDuration:'0.5s',
 	transitionTimingFunction:'cubic-bezier(0.5,0,0,1)',
-	zoomWidth:300,
-	zoomHeight:300,
+	zoomWidth:window.innerWidth/2,
+	zoomHeight:window.innerHeight/2,
 	beforeOpened:null,
 	beforeClosed:null,
 	afterOpened:null,
-	afterClosed:null
+	afterClosed:null,
+	opacity:.5
 }
 
-var transitionPrefix=getTrans(),
+var transitionPrefix=helper.getTrans(),
 	transitionProp=transitionPrefix.transition,
 	transformProp=transitionPrefix.transform,
+	transformCssProp=transformProp.replace(/(.*)Transform/,'-$1-transform'),
 	transEndEvent=transitionPrefix.transEnd
 
 var maskStyle={
@@ -39,8 +45,13 @@ var maskStyle={
 	backgroundColor:options.bgColor
 
 }
-setStyle(mask,maskStyle)
-
+helper.setStyle(mask,maskStyle)
+helper.setStyle(wrapper,{
+	position:'fixed',
+	left:'50%',
+	top:'50%',
+	zIndex:'99001'
+})
 
 var stylesCausedReflow=[
 	'position','display','float',
@@ -48,7 +59,10 @@ var stylesCausedReflow=[
 	'font','line-height','vertical-align',
 	'margin-top','margin-right','margin-left','margin-right'
 	]
-
+var docWidth=document.documentElement.clientWidth,
+			docHeight=document.documentElement.clientHeight
+		viewBox.width=docWidth
+		viewBox.height=docHeight
 
 var enlarger={
 	config:function(opts){
@@ -56,11 +70,11 @@ var enlarger={
 			options[key]=opts[key]
 		}
 
-		setStyle(mask,{
+		helper.setStyle(mask,{
 			backgroundColor:options.bgColor,
 			transition:'opacity '+
-						transitionDuration+' '+
-						transitionTimingFunction
+						options.transitionDuration+' '+
+						options.transitionTimingFunction
 
 		})
 
@@ -70,23 +84,25 @@ var enlarger={
 	show:function(el,cb){
 		if(shown||locked)return
 
-		target=typeof el==='string'
+			console.log(typeof el)
+		targetEle=typeof el==='string'
 			  ?document.querySelector(el)
 			  :el
 
-		if(options.beforeOpened)options.beforeOpened(target)
+		if(options.beforeOpened)options.beforeOpened(targetEle)
 
 		shown=locked=true
 		
-		parentEle=target.parentNode
+		parentEle=targetEle.parentNode
 
-		var box=target.getBoundingClientRect()
+		var box=targetEle.getBoundingClientRect()
 
-		viewBox=document.documentElement.getBoundingClientRect()
 
-		var holder=copyStyles(stylesCausedReflow,target,box)
-
-		oldStyle=setStyle(target,{
+		targetInsteadHolder=helper.copyStyle(stylesCausedReflow,targetEle,box)
+		var disX=box.left-(docWidth-box.width)/2,
+			disY=box.top-(docHeight-box.height)/2
+			console.log(disX+","+disY)
+		oldStyle=helper.setStyle(targetEle,{
 			position:'absolute',
 			top:0,
 			left:0,
@@ -95,35 +111,38 @@ var enlarger={
 			marginTop:-box.height/2+"px",
 			marginLeft:-box.width/2+"px",
 			cursor:browserPrefix+"zoom-out",
-			transform:'translate('+(box.left-(viewBox.width-box.width)/2)+'px,
-						'+(box.top-(viewBox.height-box.height)/2)+'px)',
-			transition:''
+			transform:'translate('+disX+'px,'
+						+disY+'px)',
+			transition:'',
+			whiteSpace:'nowrap'
 
 		},true)
 		
 		
 
-		wrapper.appendChild(target)
+		
 		
 
-		parentEle.insertBefore(holder,target)
+		parentEle.insertBefore(targetInsteadHolder,targetEle)
 		parentEle.appendChild(mask)
 		parentEle.appendChild(wrapper)
-		wrapper.appendChild(target)
+		wrapper.appendChild(targetEle)
+		mask.style.display="block"
 
-		target.offsetWidth
+		targetEle.offsetWidth
 		mask.style.opacity=options.opacity
-		setStyle(target,{
-			transform:'scale('+options.maxWidth/box.width+')',
-			transition:transformProp+' '+
-					   transitionDuration+' '+
-					   transitionTimingFunction	
+		var scale=Math.min(options.zoomWidth/box.width,options.zoomHeight/box.height)
+		helper.setStyle(targetEle,{
+			transform:'scale('+scale+')',
+			transition:transformCssProp+' '+
+					   options.transitionDuration+' '+
+					   options.transitionTimingFunction	
 		})
 
-		traget.addEventListener(transEndEvent,function end(){
-			target.removeEventListener(transEndEvent,end)
+		targetEle.addEventListener(transEndEvent,function end(){
+			targetEle.removeEventListener(transEndEvent,end)
 			cb=cb||options.afterOpened
-			if(cb){cb(target)}
+			if(cb){cb(targetEle)}
 			locked=false
 		})
 	return this	
@@ -133,35 +152,35 @@ var enlarger={
 		if(!shown||locked)return
 		locked=true
 
-		if(options.beforeClosed)options.beforeClosed(target)
+		if(options.beforeClosed)options.beforeClosed(targetEle)
 
-		var pBox=holder.getBoundingClientRect(),
+		var pBox=targetInsteadHolder.getBoundingClientRect(),
 
 			dx=pBox.left-(viewBox.width-pBox.width)/2,
 			dy=pBox.top-(viewBox.height-pBox.height)/2
 
 		mask.style.opacity=0
-		setStyle(target,{
+		helper.setStyle(targetEle,{
 			transform:'translate('+dx+'px,'+dy+'px)'
 		})
 
-		target.addEventListener(transEndEvent,function end(){
-			target.removeEventListener(transEndEvent,end)
+		targetEle.addEventListener(transEndEvent,function end(){
+			targetEle.removeEventListener(transEndEvent,end)
 
-			setStyle(target,extendStyle(oldStyle,{transform:'none'}))
+			helper.setStyle(targetEle,helper.extendStyle(oldStyle,{transform:'none'}))
 			
-			parentEle.insertBefore(target,holder)
-			parentEle.removeChild(holder)
+			parentEle.insertBefore(targetEle,targetInsteadHolder)
+			parentEle.removeChild(targetInsteadHolder)
 			parentEle.removeChild(wrapper)
 			parentEle.removeChild(mask)
 
 			mask.style.display="none"
-			holder=null
+			targetInsteadHolder=null
 
 			shown=locked=false,
 
-			cb=cb||option.afterClosed
-			if(cb)cb(target)
+			cb=cb||options.afterClosed
+			if(cb)cb(targetEle)
 
 		})
 		return this
@@ -178,7 +197,7 @@ var enlarger={
 			return
 		}
 
-		setStyle(el,{
+		helper.setStyle(el,{
 			'cursor':browserPrefix+'zoom-in'
 		})
 
@@ -188,21 +207,19 @@ var enlarger={
 				enlarger.close()
 			}
 			else{
-				enlarger.open();
+				enlarger.show(el);
 			}
 		})
 		return this
 
 	}
-	
-
-   
+	   
 }
 
 	mask.addEventListener("click",enlarger.close)
 	wrapper.addEventListener("click",enlarger.close)
 
-	export default enlarger
+	export  {enlarger}
 
 
 
