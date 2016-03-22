@@ -53,7 +53,6 @@ export function extendStyle(originalstyle, targetStyle) {
     return originalstyle
 }
 export function copyStyle(styles, targetEle, rect) {
-
     var holder = document.createElement('div'),
         targetStyles = getComputedStyle(targetEle),
         l = styles.length,
@@ -68,10 +67,11 @@ export function copyStyle(styles, targetEle, rect) {
         visiblity: 'hidden',
         width: rect.width + 'px',
         height: rect.height + 'px',
-        display: targetStyles.display === 'inline' ? 'inline-block' : targetStyles.display
+         display: targetStyles.display=='inline'?'inline-block':targetStyles.display,
+	        visibility: 'hidden'
+	 });
+	 holder.innerHTML = targetEle.innerHTML;
 
-    })
-
-    return holder
+     return holder
 
 }

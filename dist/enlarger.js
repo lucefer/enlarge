@@ -91,10 +91,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    targetInsteadHolder,
 	    parentEle,
 	    browserPrefix = 'webkitAppearance' in document.body.style ? '-webkit-' : '';
+	
 	//state
 	var shown = false,
 	    locked = false,
 	    oldStyle;
+	
 	//visual doc box
 	var viewBox = {};
 	
@@ -256,7 +258,7 @@ return /******/ (function(modules) { // webpackBootstrap
 				while (l--) {
 					this.watch(elArr[l]);
 				}
-				return;
+				return this;
 			}
 	
 			helper.setStyle(el, {
@@ -364,10 +366,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        visiblity: 'hidden',
 	        width: rect.width + 'px',
 	        height: rect.height + 'px',
-	        display: targetStyles.display === 'inline' ? 'inline-block' : targetStyles.display
-	
+	        display: targetStyles.display == 'inline' ? 'inline-block' : targetStyles.display,
+	        visibility: 'hidden'
 	    });
-	
+	    holder.innerHTML = targetEle.innerHTML;
 	    return holder;
 	}
 

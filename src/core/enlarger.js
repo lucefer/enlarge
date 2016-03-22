@@ -102,6 +102,7 @@ var enlarger={
 		var disX=box.left-(docWidth-box.width)/2,
 			disY=box.top-(docHeight-box.height)/2
 			console.log(disX+","+disY)
+			
 		oldStyle=helper.setStyle(targetEle,{
 			position:'absolute',
 			top:0,
@@ -194,7 +195,7 @@ var enlarger={
 			while(l--){
 				this.watch(elArr[l])
 			}
-			return
+			return this
 		}
 
 		helper.setStyle(el,{
